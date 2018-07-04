@@ -105,36 +105,29 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     # xmax is not x_max, and x,y actually should be y,x
     # TODO: fix the code below so that the above comment can be removed
 
-    ymin, ymax, xmin, xmax = region
-    logging.debug('{0}-{1},{2}-{3} starting'.format(xmin, xmax, ymin, ymax))
+    ymin, ymax = region
+    logging.debug('rows {0}-{1} starting'.format(ymin, ymax))
 
-    cmin = max(0, ymin - box_size[1]//2)
-    cmax = min(shape[1], ymax + box_size[1]//2)
-    rmin = max(0, xmin - box_size[0]//2)
-    rmax = min(shape[0], xmax + box_size[0]//2)
+    # cut out the region of interest plus 1/2 the box size, but clip to the image size
+    rmin = max(0, ymin - box_size[0]//2)
+    rmax = min(shape[0], ymax + box_size[0]//2)
 
     # Figure out how many axes are in the datafile
     NAXIS = fits.getheader(filename)["NAXIS"]
 
     with fits.open(filename, memmap=True) as a:
         if NAXIS == 2:
-            data = a[0].section[rmin:rmax, cmin:cmax]
+            data = a[0].section[rmin:rmax, 0:shape[1]]
         elif NAXIS == 3:
-            data = a[0].section[0, rmin:rmax, cmin:cmax]
+            data = a[0].section[0, rmin:rmax, 0:shape[1]]
         elif NAXIS == 4:
-            data = a[0].section[0, 0, rmin:rmax, cmin:cmax]
+            data = a[0].section[0, 0, rmin:rmax, 0:shape[1]]
         else:
             logging.error("Too many NAXIS for me {0}".format(NAXIS))
             logging.error("fix your file to be more sane")
             raise Exception("Too many NAXIS")
 
     logging.debug('data size is {0}'.format(data.shape))
-    # x/y min/max should refer to indices into data
-    # this is the region over which we want to operate
-    ymin -= cmin
-    ymax -= cmin
-    xmin -= rmin
-    xmax -= rmin
 
     def locations(step_size, xmin, xmax, ymin, ymax):
         """
@@ -172,7 +165,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     rms_points = []
     rms_values = []
 
-    for x, y in locations(step_size, xmin, xmax, ymin, ymax):
+    for x, y in locations(step_size, ymin, ymax, 0, shape[1]):
         x_min, x_max, y_min, y_max = box(x, y)
         new = data[x_min:x_max, y_min:y_max]
         new = np.ravel(new)
@@ -183,14 +176,14 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
 
         if dobkg:
             bkg = np.median(new)
-            bkg_points.append((x+rmin, y+cmin))  # these coords need to be indices into the larger array
+            bkg_points.append((x+rmin, y))  # these coords need to be indices into the larger array
             bkg_values.append(bkg)
         rms = np.std(new)
-        rms_points.append((x+rmin, y+cmin))
+        rms_points.append((x+rmin, y))
         rms_values.append(rms)
 
-    ymin, ymax, xmin, xmax = region
-    gx, gy = np.mgrid[xmin:xmax, ymin:ymax]
+    # indicies of the shape we want to write to (not the shape of data)
+    gx, gy = np.mgrid[ymin:ymax, 0:shape[1]]
     # If the bkg/rms calculation above didn't yield any points, then our interpolated values are all nans
     if len(rms_points) > 1:
         logging.debug("Interpolating rms")
@@ -206,7 +199,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     for i, row in enumerate(interpolated_rms):
         irms[i+ymin] = row
     # copy the image mask
-    irms[ymin:ymax,:][np.where(np.isnan(data))] = np.nan
+    # irms[ymin:ymax,:][np.where(np.isnan(data[ymin:ymax,:]))] = np.nan
     logging.debug(" .. done writing rms")
 
     if dobkg:
@@ -223,9 +216,9 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
         for i, row in enumerate(interpolated_bkg):
             ibkg[i+ymin] = row
         # copy the image mask
-        ibkg[ymin:ymax,:][np.where(np.isnan(data))] = np.nan
+        ibkg[ymin:ymax,:][np.where(np.isnan(data[ymin:ymax,:]))] = np.nan
         logging.debug(" .. done writing bkg")
-    logging.debug('{0}x{1},{2}x{3} finished'.format(xmin, xmax, ymin, ymax))
+    logging.debug('rows {0}-{1} finished'.format(ymin, ymax))
     return
 
 
@@ -313,7 +306,7 @@ def filter_image(im_name, out_base, step_size=None, box_size=None, nslice=None):
     logging.debug("ymaxs {0}".format(ymaxs))
 
     for ymin, ymax in zip(ymins, ymaxs):
-        region = [0, shape[1], ymin, ymax]
+        region = (ymin, ymax)
         sigma_filter(filename=im_name, region=region, step_size=step_size, box_size=box_size, shape=shape)
 
     logging.info("done")
