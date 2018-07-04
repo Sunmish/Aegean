@@ -129,7 +129,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
 
     logging.debug('data size is {0}'.format(data.shape))
 
-    def locations(step_size, xmin, xmax, ymin, ymax):
+    def locations(l_step_size, l_xmin, l_xmax, l_ymin, l_ymax):
         """
         Generator function to iterate over a grid of x,y coords
         operates only within the given bounds
@@ -137,12 +137,12 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
         x, y
         """
 
-        xvals = list(range(xmin, xmax, step_size[0]))
-        if xvals[-1] != xmax:
-            xvals.append(xmax)
-        yvals = list(range(ymin, ymax, step_size[1]))
-        if yvals[-1] != ymax:
-            yvals.append(ymax)
+        xvals = list(range(l_xmin, l_xmax, l_step_size[0]))
+        if xvals[-1] != l_xmax:
+            xvals.append(l_xmax)
+        yvals = list(range(l_ymin, l_ymax, l_step_size[1]))
+        if yvals[-1] != l_ymax:
+            yvals.append(l_ymax)
         # initial data
         for y in yvals:
             for x in xvals:
