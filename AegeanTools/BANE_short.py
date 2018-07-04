@@ -199,7 +199,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     for i, row in enumerate(interpolated_rms):
         irms[i+ymin] = row
     # copy the image mask
-    # irms[ymin:ymax,:][np.where(np.isnan(data[ymin:ymax,:]))] = np.nan
+    irms[ymin:ymax, :][np.where(np.isnan(data[ymin-rmin:ymax-rmin, :]))] = np.nan
     logging.debug(" .. done writing rms")
 
     if dobkg:
@@ -216,7 +216,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
         for i, row in enumerate(interpolated_bkg):
             ibkg[i+ymin] = row
         # copy the image mask
-        ibkg[ymin:ymax,:][np.where(np.isnan(data[ymin:ymax,:]))] = np.nan
+        ibkg[ymin:ymax, :][np.where(np.isnan(data[ymin-rmin:ymax-rmin, :]))] = np.nan
         logging.debug(" .. done writing bkg")
     logging.debug('rows {0}-{1} finished'.format(ymin, ymax))
     return
