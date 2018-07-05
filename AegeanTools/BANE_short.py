@@ -110,7 +110,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
 
     # cut out the region of interest plus 1/2 the box size, but clip to the image size
     data_row_min = max(0, region[0] - box_size[0]//2)
-    data_row_max = min(shape[0], region[0] + box_size[0]//2)
+    data_row_max = min(shape[0], region[1] + box_size[0]//2)
 
     row_offset = region[0]-data_row_min
 
