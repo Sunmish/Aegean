@@ -101,10 +101,6 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     None
     """
 
-    # Caveat emptor: The code that follows is very difficult to read.
-    # xmax is not r_max, and x,y actually should be y,x
-    # TODO: fix the code below so that the above comment can be removed
-
     ymin, ymax = region
     logging.debug('rows {0}-{1} starting'.format(ymin, ymax))
 
@@ -153,11 +149,10 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
         calculate the boundaries of the box centered at r,c
         with size = box_size
         """
-        # TODO: check that / should be //
-        r_min = int(max(0, r - box_size[0] / 2))
-        r_max = int(min(data.shape[0] - 1, r + box_size[0] / 2))
-        c_min = int(max(0, c - box_size[1] / 2))
-        c_max = int(min(data.shape[1] - 1, c + box_size[1] / 2))
+        r_min = max(0, r - box_size[0] // 2)
+        r_max = min(data.shape[0] - 1, r + box_size[0] // 2)
+        c_min = max(0, c - box_size[1] // 2)
+        c_max = min(data.shape[1] - 1, c + box_size[1] // 2)
         return r_min, r_max, c_min, c_max
 
     bkg_points = []
