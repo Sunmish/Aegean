@@ -112,8 +112,6 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     data_row_min = max(0, region[0] - box_size[0]//2)
     data_row_max = min(shape[0], region[1] + box_size[0]//2)
 
-    row_offset = region[0]-data_row_min
-
     # Figure out how many axes are in the datafile
     NAXIS = fits.getheader(filename)["NAXIS"]
 
@@ -167,23 +165,21 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     rms_points = []
     rms_values = []
 
-    for row, col in locations(step_size, region[0], region[1], 0, shape[1]):
+    for row, col in locations(step_size, region[0]-data_row_min, region[1]-data_row_min, 0, shape[1]):
         r_min, r_max, c_min, c_max = box(row, col)
         new = data[r_min:r_max, c_min:c_max]
-        logging.debug("r,c = {0},{1}, r_min,r_max={2},{3} new.shape={4}".format(row, col, r_min, r_max, new.shape))
         new = np.ravel(new)
         new = sigmaclip(new, 3, 3)
         # If we are left with (or started with) no data, then just move on
         if len(new) < 1:
-            logging.debug("short")
             continue
 
         if dobkg:
             bkg = np.median(new)
-            bkg_points.append((row + row_offset, col))  # these coords need to be indices into the larger array
+            bkg_points.append((row + data_row_min, col))  # these coords need to be indices into the larger array
             bkg_values.append(bkg)
         rms = np.std(new)
-        rms_points.append((row + row_offset, col))
+        rms_points.append((row + data_row_min, col))
         rms_values.append(rms)
 
     # indicies of the shape we want to write to (not the shape of data)
