@@ -109,8 +109,10 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     logging.debug('rows {0}-{1} starting'.format(ymin, ymax))
 
     # cut out the region of interest plus 1/2 the box size, but clip to the image size
-    data_row_min = max(0, ymin - box_size[0]//2)
-    data_row_max = min(shape[0], ymax + box_size[0]//2)
+    data_row_min = max(0, region[0] - box_size[0]//2)
+    data_row_max = min(shape[0], region[0] + box_size[0]//2)
+
+    row_offset = region[0]-data_row_min
 
     # Figure out how many axes are in the datafile
     NAXIS = fits.getheader(filename)["NAXIS"]
@@ -178,10 +180,10 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
 
         if dobkg:
             bkg = np.median(new)
-            bkg_points.append((row+region[0]-data_row_min, col))  # these coords need to be indices into the larger array
+            bkg_points.append((row + row_offset, col))  # these coords need to be indices into the larger array
             bkg_values.append(bkg)
         rms = np.std(new)
-        rms_points.append((row+region[0]-data_row_min, col))
+        rms_points.append((row + row_offset, col))
         rms_values.append(rms)
 
     # indicies of the shape we want to write to (not the shape of data)
