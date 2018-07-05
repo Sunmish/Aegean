@@ -10,10 +10,9 @@ import os
 import logging
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
-import sys
 
 __author__ = ['Paul Hancock', 'Mohsin Shaikh']
-__date__ = '2018-07-04'
+__date__ = '2018-07-05'
 __version__ = '0.1'
 
 logging.basicConfig(level=logging.DEBUG)
