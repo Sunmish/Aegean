@@ -131,7 +131,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
 
     logging.debug('data size is {0}'.format(data.shape))
 
-    def locations(step, r_min, r_max, c_min, c_max):
+    def locations(step, _r_min, _r_max, _c_min, _c_max):
         """
         Generator function to iterate over a grid of r,c coords
         operates only within the given bounds
@@ -139,12 +139,12 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
         r, c
         """
 
-        rvals = list(range(r_min, r_max, step[0]))
-        if rvals[-1] != r_max:
-            rvals.append(r_max)
-        cvals = list(range(c_min, c_max, step[1]))
-        if cvals[-1] != c_max:
-            cvals.append(c_max)
+        rvals = list(range(_r_min, _r_max, step[0]))
+        if rvals[-1] != _r_max:
+            rvals.append(_r_max)
+        cvals = list(range(_c_min, _c_max, step[1]))
+        if cvals[-1] != _c_max:
+            cvals.append(_c_max)
         # initial data
         for c in cvals:
             for r in rvals:
@@ -170,7 +170,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     for row, col in locations(step_size, region[0], region[1], 0, shape[1]):
         r_min, r_max, c_min, c_max = box(row, col)
         new = data[r_min:r_max, c_min:c_max]
-        logging.debug("r,c = {0},{1}, r_min,r_max={2},{3} new.shape={4}".format(row,col,r_min, r_max,new.shape))
+        logging.debug("r,c = {0},{1}, r_min,r_max={2},{3} new.shape={4}".format(row, col, r_min, r_max, new.shape))
         new = np.ravel(new)
         new = sigmaclip(new, 3, 3)
         # If we are left with (or started with) no data, then just move on
