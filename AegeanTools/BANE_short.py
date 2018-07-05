@@ -81,8 +81,8 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     filename : string
         Fits file to open
 
-    region : (float, float, float, float)
-        Region within the fits file that is to be processed. (ymin, ymax, xmin, xmax).
+    region : list
+        Region within the fits file that is to be processed. (row_min, row_max).
 
     step_size : (int, int)
         The filtering step size
@@ -102,26 +102,26 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     """
 
     # Caveat emptor: The code that follows is very difficult to read.
-    # xmax is not x_max, and x,y actually should be y,x
+    # xmax is not r_max, and x,y actually should be y,x
     # TODO: fix the code below so that the above comment can be removed
 
     ymin, ymax = region
     logging.debug('rows {0}-{1} starting'.format(ymin, ymax))
 
     # cut out the region of interest plus 1/2 the box size, but clip to the image size
-    rmin = max(0, ymin - box_size[0]//2)
-    rmax = min(shape[0], ymax + box_size[0]//2)
+    data_row_min = max(0, ymin - box_size[0]//2)
+    data_row_max = min(shape[0], ymax + box_size[0]//2)
 
     # Figure out how many axes are in the datafile
     NAXIS = fits.getheader(filename)["NAXIS"]
 
     with fits.open(filename, memmap=True) as a:
         if NAXIS == 2:
-            data = a[0].section[rmin:rmax, 0:shape[1]]
+            data = a[0].section[data_row_min:data_row_max, 0:shape[1]]
         elif NAXIS == 3:
-            data = a[0].section[0, rmin:rmax, 0:shape[1]]
+            data = a[0].section[0, data_row_min:data_row_max, 0:shape[1]]
         elif NAXIS == 4:
-            data = a[0].section[0, 0, rmin:rmax, 0:shape[1]]
+            data = a[0].section[0, 0, data_row_min:data_row_max, 0:shape[1]]
         else:
             logging.error("Too many NAXIS for me {0}".format(NAXIS))
             logging.error("fix your file to be more sane")
@@ -165,10 +165,10 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     rms_points = []
     rms_values = []
 
-    for row, col in locations(step_size, ymin, ymax, 0, shape[1]):
-        x_min, x_max, y_min, y_max = box(row, col)
-        new = data[x_min:x_max, y_min:y_max]
-        logging.debug("x,y = {0},{1}, x_min,x_max={2},{3} new.shape={4}".format(row,col,x_min, x_max,new.shape))
+    for row, col in locations(step_size, region[0], region[1], 0, shape[1]):
+        r_min, r_max, c_min, c_max = box(row, col)
+        new = data[r_min:r_max, c_min:c_max]
+        logging.debug("r,c = {0},{1}, r_min,r_max={2},{3} new.shape={4}".format(row,col,r_min, r_max,new.shape))
         new = np.ravel(new)
         new = sigmaclip(new, 3, 3)
         # If we are left with (or started with) no data, then just move on
@@ -178,10 +178,10 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
 
         if dobkg:
             bkg = np.median(new)
-            bkg_points.append((row+ymin-rmin, col))  # these coords need to be indices into the larger array
+            bkg_points.append((row+region[0]-data_row_min, col))  # these coords need to be indices into the larger array
             bkg_values.append(bkg)
         rms = np.std(new)
-        rms_points.append((row+ymin-rmin, col))
+        rms_points.append((row+region[0]-data_row_min, col))
         rms_values.append(rms)
 
     # indicies of the shape we want to write to (not the shape of data)
@@ -202,7 +202,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
     for i, row in enumerate(interpolated_rms):
         irms[i+offset] = row
     # copy the image mask
-    irms[ymin:ymax, :][np.where(np.isnan(data[ymin-rmin:ymax-rmin, :]))] = np.nan
+    irms[ymin:ymax, :][np.where(np.isnan(data[ymin-data_row_min:ymax-data_row_min, :]))] = np.nan
     logging.debug(" .. done writing rms")
 
     if dobkg:
@@ -219,7 +219,7 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
         for i, row in enumerate(interpolated_bkg):
             ibkg[i+offset] = row
         # copy the image mask
-        ibkg[ymin:ymax, :][np.where(np.isnan(data[ymin-rmin:ymax-rmin, :]))] = np.nan
+        ibkg[ymin:ymax, :][np.where(np.isnan(data[ymin-data_row_min:ymax-data_row_min, :]))] = np.nan
         logging.debug(" .. done writing bkg")
     logging.debug('rows {0}-{1} finished'.format(ymin, ymax))
     return
