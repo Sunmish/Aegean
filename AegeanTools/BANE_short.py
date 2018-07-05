@@ -148,38 +148,40 @@ def sigma_filter(filename, region, step_size, box_size, shape, dobkg=True):
             for x in xvals:
                 yield x, y
 
-    def box(x, y):
+    def box(r, c):
         """
-        calculate the boundaries of the box centered at x,y
+        calculate the boundaries of the box centered at r,c
         with size = box_size
         """
         # TODO: check that / should be //
-        x_min = int(max(0, x-box_size[0]/2))
-        x_max = int(min(data.shape[0]-1, x+box_size[0]/2))
-        y_min = int(max(0, y-box_size[1]/2))
-        y_max = int(min(data.shape[1]-1, y+box_size[1]/2))
-        return x_min, x_max, y_min, y_max
+        r_min = int(max(0, r - box_size[0] / 2))
+        r_max = int(min(data.shape[0] - 1, r + box_size[0] / 2))
+        c_min = int(max(0, c - box_size[1] / 2))
+        c_max = int(min(data.shape[1] - 1, c + box_size[1] / 2))
+        return r_min, r_max, c_min, c_max
 
     bkg_points = []
     bkg_values = []
     rms_points = []
     rms_values = []
 
-    for x, y in locations(step_size, ymin, ymax, 0, shape[1]):
-        x_min, x_max, y_min, y_max = box(x, y)
+    for row, col in locations(step_size, ymin, ymax, 0, shape[1]):
+        x_min, x_max, y_min, y_max = box(row, col)
         new = data[x_min:x_max, y_min:y_max]
+        logging.debug("x,y = {0},{1}, x_min,x_max={2},{3} new.shape={4}".format(row,col,x_min, x_max,new.shape))
         new = np.ravel(new)
         new = sigmaclip(new, 3, 3)
         # If we are left with (or started with) no data, then just move on
         if len(new) < 1:
+            logging.debug("short")
             continue
 
         if dobkg:
             bkg = np.median(new)
-            bkg_points.append((x+rmin, y))  # these coords need to be indices into the larger array
+            bkg_points.append((row+ymin-rmin, col))  # these coords need to be indices into the larger array
             bkg_values.append(bkg)
         rms = np.std(new)
-        rms_points.append((x+rmin, y))
+        rms_points.append((row+ymin-rmin, col))
         rms_values.append(rms)
 
     # indicies of the shape we want to write to (not the shape of data)
