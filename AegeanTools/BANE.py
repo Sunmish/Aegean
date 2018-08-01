@@ -3,6 +3,7 @@
 This module contains all of the BANE specific code
 The function filter_image should be imported from elsewhere and run as is.
 """
+from __future__ import division
 # standard imports
 from astropy.io import fits
 import copy
@@ -19,8 +20,8 @@ from time import gmtime, strftime
 from .fits_interp import compress
 
 __author__ = 'Paul Hancock'
-__version__ = 'v1.6.5'
-__date__ = '2018-07-05'
+__version__ = 'v1.7.0'
+__date__ = '2018-08-01'
 
 # global variables for multiprocessing
 ibkg = irms = None
