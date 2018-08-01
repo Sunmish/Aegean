@@ -54,7 +54,7 @@ def test_filter_image():
     bkg = outbase + '_bkg.fits'
     # hdu = fits.getheader(fname)
     # shape = hdu[0]['NAXIS1'], hdu[0]['NAXIS2']
-    BANE.filter_image(fname, step_size=[10, 10], box_size=[100, 100], cores=2, out_base=outbase)
+    BANE.filter_image(fname, step_size=(10, 10), box_size=(100, 100), cores=2, out_base=outbase)
     if not os.path.exists(rms):
         raise AssertionError()
 
@@ -63,7 +63,7 @@ def test_filter_image():
         raise AssertionError()
 
     os.remove(bkg)
-    BANE.filter_image(fname, cores=2, out_base=outbase, twopass=True, compressed=True)
+    BANE.filter_image(fname, cores=2, out_base=outbase, compressed=True)
     if not os.path.exists(rms):
         raise AssertionError()
 
