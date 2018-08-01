@@ -334,7 +334,7 @@ def filter_mc_sharemem(filename, step_size, box_size, cores, shape, nslice=None)
 
     if cores is None:
         cores = multiprocessing.cpu_count()
-    if nslice is None:
+    if (nslice is None) or (cores==1):
         nslice = cores
 
     img_y, img_x = shape
@@ -349,20 +349,18 @@ def filter_mc_sharemem(filename, step_size, box_size, cores, shape, nslice=None)
 
     logging.info("using {0} cores".format(cores))
     logging.info("using {0} stripes".format(nslice))
-    # Use a striped sectioning scheme
-    ny = nslice
 
-    # box widths should be multiples of the step_size, and not zero
-    width_y = int(max(img_y/ny/step_size[1], 1) * step_size[1])
+    if nslice > 1:
+        # box widths should be multiples of the step_size, and not zero
+        width_y = int(max(img_y/nslice/step_size[1], 1) * step_size[1])
 
-    ystart = width_y
-    yend = img_y - img_y % width_y
-
-    logging.debug("start {0}, end{1}".format(ystart, yend))
-    # locations of the box edges
-    ymins = list(range(0, img_y, width_y))
-    ymaxs = list(range(ystart, img_y, width_y))
-    ymaxs.append(img_y)
+        # locations of the box edges
+        ymins = list(range(0, img_y, width_y))
+        ymaxs = list(range(width_y, img_y, width_y))
+        ymaxs.append(img_y)
+    else:
+        ymins = [0]
+        ymaxs = [img_y]
 
     logging.debug("ymins {0}".format(ymins))
     logging.debug("ymaxs {0}".format(ymaxs))
