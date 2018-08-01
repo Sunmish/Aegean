@@ -54,7 +54,7 @@ def test_filter_image():
     bkg = outbase + '_bkg.fits'
     # hdu = fits.getheader(fname)
     # shape = hdu[0]['NAXIS1'], hdu[0]['NAXIS2']
-    BANE.filter_image(fname, step_size=[10, 10], box_size=[100, 100], cores=1, out_base=outbase)
+    BANE.filter_image(fname, step_size=[10, 10], box_size=[100, 100], cores=2, out_base=outbase)
     if not os.path.exists(rms):
         raise AssertionError()
 
@@ -99,7 +99,7 @@ def test_quantitative():
     """Test that the images are equal to a pre-calculated version"""
     fbase = 'tests/test_files/1904-66_SIN'
     outbase = 'dlme'
-    BANE.filter_image(fbase+'.fits', out_base=outbase)
+    BANE.filter_image(fbase+'.fits', out_base=outbase, cores=4)
 
     rms = outbase + '_rms.fits'
     bkg = outbase + '_bkg.fits'
@@ -116,7 +116,7 @@ def test_quantitative():
     if not np.allclose(r1, r2, atol=0.01, equal_nan=True):
         raise AssertionError("rms is wrong")
 
-    if not np.allclose(b1, b2, atol=0.001, equal_nan=True):
+    if not np.allclose(b1, b2, atol=0.003, equal_nan=True):
         raise AssertionError("bkg is wrong")
 
     return
