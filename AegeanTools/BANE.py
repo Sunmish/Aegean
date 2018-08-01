@@ -14,7 +14,6 @@ import numpy as np
 import os
 from scipy.interpolate import LinearNDInterpolator
 import sys
-from tempfile import NamedTemporaryFile
 from time import gmtime, strftime
 # Aegean tools
 from .fits_interp import compress
@@ -265,11 +264,11 @@ def sigma_filter(filename, region, step_size, box_size, shape, sid):
             irms[i + ymin] = np.ctypeslib.as_ctypes(row)
     logging.debug(" .. done writing rms")
 
+    ##
+    # Apply mask
+    ##
 
     logging.debug('rows {0}-{1} finished at {2}'.format(ymin, ymax, strftime("%Y-%m-%d %H:%M:%S", gmtime())))
-    del bkg_points, bkg_values
-    del rms_points, rms_values
-
     return
 
 
@@ -386,6 +385,7 @@ def filter_mc_sharemem(filename, step_size, box_size, cores, shape, nslice=None)
     pool.close()
     pool.join()
 
+    # cast back to regular np arrays
     rms = np.array(irms)
     bkg = np.array(ibkg)
     return bkg, rms
