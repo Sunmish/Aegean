@@ -364,13 +364,11 @@ def filter_mc_sharemem(filename, step_size, box_size, cores, shape, dobkg=True, 
     ystart = width_y
     yend = img_y - img_y % width_y
 
+    logging.debug("start {0}, end{1}".format(ystart, yend))
     # locations of the box edges
-    ymins = [0]
-    ymins.extend(list(range(ystart, yend, width_y)))
-
-    ymaxs = [ystart]
-    ymaxs.extend(list(range(ystart+width_y, yend+1, width_y)))
-    ymaxs[-1] = img_y
+    ymins = list(range(0, img_y, width_y))
+    ymaxs = list(range(ystart, img_y, width_y))
+    ymaxs.append(img_y)
 
     logging.debug("ymins {0}".format(ymins))
     logging.debug("ymaxs {0}".format(ymaxs))
