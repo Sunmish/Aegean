@@ -99,7 +99,7 @@ def test_quantitative():
     """Test that the images are equal to a pre-calculated version"""
     fbase = 'tests/test_files/1904-66_SIN'
     outbase = 'dlme'
-    BANE.filter_image(fbase+'.fits', out_base=outbase, cores=4)
+    BANE.filter_image(fbase+'.fits', out_base=outbase, cores=2, nslice=2)
 
     rms = outbase + '_rms.fits'
     bkg = outbase + '_bkg.fits'
