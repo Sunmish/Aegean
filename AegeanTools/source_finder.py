@@ -1017,7 +1017,7 @@ class SourceFinder(object):
     ##
     # Fitting and refitting
     ##
-    def _refit_islands(self, group, stage, outerclip=None, istart=0):
+    def _refit_islands(self, group, stage, outerclip=None, istart=0, allow_negative=False):
         """
         Do island refitting (priorized fitting) on a group of islands.
 
@@ -1034,6 +1034,10 @@ class SourceFinder(object):
 
         istart : int
             The starting island number.
+
+        allow_negative : bool
+            If true, allow components to be fit with negative values, otherwise force them to be
+            positive definite.
 
         Returns
         -------
@@ -1106,7 +1110,12 @@ class SourceFinder(object):
 
                 # Set up the parameters for the fit, including constraints
                 prefix = "c{0}_".format(i)
-                params.add(prefix + 'amp', value=src.peak_flux, vary=True)
+                if allow_negative:
+                    params.add(prefix + 'amp', value=src.peak_flux, vary=True)
+                else:
+                    # Ensure that we don't end up with a starting value that is less than the min
+                    params.add(prefix + 'amp', value=abs(src.peak_flux), min=0.0, vary=True)
+                    
                 # for now the xo/yo are locations within the main image, we correct this later
                 params.add(prefix + 'xo', value=source_x, min=source_x - sx / 2., max=source_x + sx / 2.,
                            vary=stage >= 2)
@@ -1541,7 +1550,7 @@ class SourceFinder(object):
 
     def priorized_fit_islands(self, filename, catalogue, hdu_index=0, outfile=None, bkgin=None, rmsin=None, cores=1,
                               rms=None, bkg=None, beam=None, lat=None, imgpsf=None, catpsf=None, stage=3, ratio=None, outerclip=3,
-                              doregroup=True, docov=True, cube_index=None):
+                              doregroup=True, allow_negative=False, docov=True, cube_index=None):
         """
         Take an input catalog, and image, and optional background/noise images
         fit the flux and ra/dec for each of the given sources, keeping the morphology fixed
@@ -1598,6 +1607,10 @@ class SourceFinder(object):
 
         innerclip, outerclip : float
             The seed (inner) and flood (outer) clipping level (sigmas).
+
+        allow_negative : bool
+            If true, allow components to be fit with negative values, otherwise force them to be
+            positive definite.
 
         docov : bool
             If True then include covariance matrix in the fitting process. (default=True)
@@ -1745,18 +1758,18 @@ class SourceFinder(object):
             # If the island group is full queue it for the subprocesses to fit
             if len(island_group) >= group_size:
                 if cores > 1:
-                    fit_parallel(island_group, stage, outerclip, istart=i)
+                    fit_parallel(island_group, stage, outerclip, istart=i, allow_negative=allow_negative)
                 else:
-                    res = self._refit_islands(island_group, stage, outerclip, istart=i)
+                    res = self._refit_islands(island_group, stage, outerclip, istart=i, allow_negative=allow_negative)
                     queue.append(res)
                 island_group = []
 
         # The last partially-filled island group also needs to be queued for fitting
         if len(island_group) > 0:
             if cores > 1:
-                fit_parallel(island_group, stage, outerclip, istart=i)
+                fit_parallel(island_group, stage, outerclip, istart=i, allow_negative=allow_negative)
             else:
-                res = self._refit_islands(island_group, stage, outerclip, istart=i)
+                res = self._refit_islands(island_group, stage, outerclip, istart=i, allow_negative=allow_negative)
                 queue.append(res)
 
         # now unpack the fitting results in to a list of sources
